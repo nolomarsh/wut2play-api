@@ -19,7 +19,10 @@ router.get('/:id', (req,res) => {
 
 router.post('/newuser', (req,res) => {
     const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
-    postgres.query(`INSERT INTO users (username, password, email) VALUES (${req.body.username}, ${hashPass}, ${req.body.email})`, (err, newUser) => {
+    postgres.query(`INSERT INTO users (username, password, email) VALUES (${req.body.username}, ${hashPass}, ${req.body.email});`, (err, newUser) => {
+        if (err) {
+            res.json({error: err})
+        }
         res.json(newUser)
     })
 })
