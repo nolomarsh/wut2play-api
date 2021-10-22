@@ -18,8 +18,10 @@ router.get('/:id', (req,res) => {
 })
 
 router.post('/newuser', (req,res) => {
+    console.log(req.body)
     const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
-    postgres.query(`INSERT INTO users (username, password, email) VALUES (${req.body.username}, ${hashPass}, ${req.body.email});`, (err, newUser) => {
+    console.log(hashPass.length)
+    postgres.query(`INSERT INTO users (username, password, email) VALUES ('${req.body.username}', '${hashPass}', '${req.body.email}');`, (err, newUser) => {
         if (err) {
             res.json({error: err})
         }
@@ -28,7 +30,7 @@ router.post('/newuser', (req,res) => {
 })
 
 router.post('/login', (req,res) => {
-    postgres.query(`SELECT * FROM users WHERE username = ${req.body.username}`, (err, results) => {
+    postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}';`, (err, results) => {
         if (err) {
             res.json({error: 'Database error'})
         } else if (results.rowCount === 0) {
