@@ -15,6 +15,7 @@ const PORT = process.env.PORT || 3001
 //*****************
 // const peopleController = require('./controllers/people.js')
 const usersController = require('./controllers/users.js')
+const gamesController = require('./controllers/gameEntries.js')
 
 //****************
 //** Middleware **
@@ -24,6 +25,7 @@ const usersController = require('./controllers/users.js')
 app.use(express.json())
 app.use(express.static('public'))
 app.use('/users', usersController)
+app.use('/games', gamesController)
 
 //****************
 //*** Listener ***

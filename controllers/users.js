@@ -3,9 +3,17 @@ const router = express.Router()
 const postgres = require('../postgres.js')
 const bcrypt = require('bcrypt')
 
+/*
+User Model
+id: serial
+username: varchar(32) UNIQUE
+password: varchar(108)
+email: varchar(32) UNIQUE
+*/
+
 //get all usernames
 router.get('/', (req,res) => {
-    postgres.query('SELECT username FROM users ORDER BY id ASC;', (err, results) => {
+    postgres.query('SELECT username, id FROM users ORDER BY id ASC;', (err, results) => {
         res.json(results.rows)
     })
 })
@@ -29,6 +37,33 @@ router.post('/newuser', (req,res) => {
     })
 })
 
+//UPDATE
+router.put('/:id', (req,res) => {
+    if (req.body.password) {
+        req.body.password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
+    }
+    postgres.query(
+        `UPDATE users SET
+        username = '${req.body.username}',
+        password = '${req.body.password}',
+        email = '${req.body.email}'
+        WHERE id = ${req.params.id};`, (err, results) => {
+            postgres.query(`SELECT * FROM users WHERE id = ${req.params.id};`, (error, updatedUser) => {
+                res.json(updatedUser.rows[0])
+            })
+        })
+})
+
+router.post('/delete/:id', (req,res) => {
+    postgres.query(`DELETE FROM users WHERE id = ${req.params.id}`, (err, response) => {
+        postgres.query(`DELETE FROM game-entries WHERE userId = ${req.params.id}`, (err, response) => {
+            postgres.query(`SELECT * FROM users;`, (error, remainingUsers) => {
+                res.json(remainingUsers.rows)
+            })
+        })
+    })
+})
+
 router.post('/login', (req,res) => {
     postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}';`, (err, results) => {
         if (err) {
@@ -45,5 +80,7 @@ router.post('/login', (req,res) => {
         }
     })
 })
+
+
 
 module.exports = router
