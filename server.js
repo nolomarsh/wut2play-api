@@ -7,21 +7,18 @@ const postgres = require('./postgres.js')
 const path = require('path');
 const PORT = process.env.PORT || 3001
 
-
-// const cors = require('cors')
+const cors = require('cors')
 
 //*****************
 //** Controllers **
 //*****************
-// const peopleController = require('./controllers/people.js')
 const usersController = require('./controllers/users.js')
 const gamesController = require('./controllers/gameEntries.js')
 
 //****************
 //** Middleware **
 //****************
-// app.use(cors())
-
+app.use(cors())
 app.use(express.json())
 app.use(express.static('public'))
 app.use('/users', usersController)
