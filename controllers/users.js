@@ -29,12 +29,23 @@ router.post('/newuser', (req,res) => {
     console.log(req.body)
     const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
     console.log(hashPass.length)
-    postgres.query(`INSERT INTO users (username, password, email) VALUES ('${req.body.username}', '${hashPass}', '${req.body.email}');`, (err, newUser) => {
-        if (err) {
-            res.json({error: err})
+
+    postgres.query(`INSERT INTO users (username, password, email) VALUES (
+        '${req.body.username}', 
+        '${hashPass}', 
+        '${req.body.email}');`,
+        (err, newUser) => {
+            if (err) {
+                res.json({error: err})
+            }
+            postgres.query(
+                'SELECT username, id FROM users ORDER BY id DESC LIMIT 1;', 
+                (err, results) => {
+                    res.json(results.rows[0])
+                }
+            )
         }
-        res.json(newUser)
-    })
+    )
 })
 
 //UPDATE
