@@ -11,9 +11,9 @@ password: varchar(108)
 email: varchar(32) UNIQUE
 */
 
-//get all usernames
+//get all users
 router.get('/', (req,res) => {
-    postgres.query('SELECT username, id FROM users ORDER BY id ASC;', (err, results) => {
+    postgres.query('SELECT * FROM users ORDER BY id ASC;', (err, results) => {
         res.json(results.rows)
     })
 })
@@ -25,6 +25,8 @@ router.get('/:id', (req,res) => {
     })
 })
 
+//Create new user route
+//Returns the newly created user
 router.post('/newuser', (req,res) => {
     console.log(req.body)
     const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
@@ -39,7 +41,7 @@ router.post('/newuser', (req,res) => {
                 res.json({error: err})
             }
             postgres.query(
-                'SELECT username, id FROM users ORDER BY id DESC LIMIT 1;', 
+                'SELECT * FROM users ORDER BY id DESC LIMIT 1;', 
                 (err, results) => {
                     res.json(results.rows[0])
                 }
@@ -48,7 +50,7 @@ router.post('/newuser', (req,res) => {
     )
 })
 
-//UPDATE
+//UPDATE - returns updated user
 router.put('/:id', (req,res) => {
     if (req.body.password) {
         req.body.password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
@@ -65,7 +67,9 @@ router.put('/:id', (req,res) => {
         })
 })
 
-router.post('/delete/:id', (req,res) => {
+//DELETE - deletes the user and all of their game entries
+//returns all remaining users
+router.delete('/delete/:id', (req,res) => {
     postgres.query(`DELETE FROM users WHERE id = ${req.params.id}`, (err, response) => {
         postgres.query(`DELETE FROM game-entries WHERE userId = ${req.params.id}`, (err, response) => {
             postgres.query(`SELECT * FROM users;`, (error, remainingUsers) => {
@@ -75,6 +79,9 @@ router.post('/delete/:id', (req,res) => {
     })
 })
 
+//verifies a username/password combination
+//returns an error message if there is no user or the password is incorrect
+//returns the user if the combination is correct
 router.post('/login', (req,res) => {
     postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}';`, (err, results) => {
         if (err) {
