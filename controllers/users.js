@@ -4,7 +4,7 @@ const postgres = require('../postgres.js')
 const bcrypt = require('bcrypt')
 
 /*
-User Model
+User Table
 id: serial
 username: varchar(32) UNIQUE
 password: varchar(108)
@@ -84,16 +84,24 @@ router.delete('/delete/:id', (req,res) => {
 //returns the user if the combination is correct
 router.post('/login', (req,res) => {
     postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}';`, (err, results) => {
+        //A properly shaped response to deliver an error message without actually throwing an error
+        const badLoginResponse = {
+            id: -1,
+            username: '',
+            password: '',
+            email: '',
+            message: 'Invalid username/password combination'
+        }
         if (err) {
-            res.json({error: 'Database error'})
+            next(err)
         } else if (results.rowCount === 0) {
-            res.json({error: 'Invalid username/password'})
+            res.json(badLoginResponse)
         } else {
             const foundUser = results.rows[0]
             if (bcrypt.compareSync(req.body.password, foundUser.password)){
-                res.json(foundUser)
+                res.json({...foundUser, message: ''})
             } else {
-                res.json({error: 'Invalid username/password'})
+                res.json(badLoginResponse)
             }
         }
     })
