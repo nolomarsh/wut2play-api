@@ -3,28 +3,28 @@ const router = express.Router()
 const postgres = require('../postgres.js')
 
 /*
-gameentry model
+game_entry model
 id serial,
 name varchar(64),
-imageurl varchar(254),
-minplayers int,
-maxplayers int,
-mintime int,
-maxtime int,
+image_url varchar(254),
+min_players int,
+max_players int,
+min_playtime int,
+max_playtime int,
 notes text,
-userid int
+user_id int
 */
 
 router.get('/', (req,res) => {
-    postgres.query(`SELECT * FROM gameentries;`, (err, results) => {
+    postgres.query(`SELECT * FROM game_entries;`, (err, results) => {
         res.json(results.rows)
     })
 })
 
 //get games by userId, no reason to get all of the
-router.get('/:userid', (req,res) => {
+router.get('/:user_id', (req,res) => {
     postgres.query(
-        `SELECT * FROM gameentries WHERE userid = ${req.params.userid};`, (err, results) => {
+        `SELECT * FROM game_entries WHERE user_id = ${req.params.user_id};`, (err, results) => {
             if (err) {
                 res.json({error: err})
             }
@@ -32,14 +32,14 @@ router.get('/:userid', (req,res) => {
         })
 })
 
-router.post('/:userid/filter', (req,res) => {
+router.post('/:user_id/filter', (req,res) => {
     postgres.query(
-        `SELECT * FROM gameentries WHERE
-        userid = ${req.params.userid} AND
-        minplayers <= ${req.body.numplayers} AND
-        maxplayers >= ${req.body.numplayers} AND
-        mintime <= ${req.body.playtime} AND
-        maxtime >= ${req.body.playtime};`, (err, results) => {
+        `SELECT * FROM game_entries WHERE
+        user_id = ${req.params.user_id} AND
+        min_players <= ${req.body.num_players} AND
+        max_players >= ${req.body.num_players} AND
+        min_playtime <= ${req.body.playtime} AND
+        max_playtime >= ${req.body.playtime};`, (err, results) => {
             if (err) {
                 res.json({error: err})
             }
@@ -51,7 +51,7 @@ router.post('/:userid/filter', (req,res) => {
 //new game route
 router.post('/newgame', (req,res) => {
     postgres.query(
-        `INSERT INTO gameentries (name, imageurl, minplayers, maxplayers, mintime, maxtime, notes, userId) values (
+        `INSERT INTO game_entries (name, image_url, min_players, max_players, min_playtime, max_playtime, notes, user_id) values (
             '${req.body.name}',
             '${req.body.image_url}',
             ${req.body.min_players},
@@ -59,12 +59,12 @@ router.post('/newgame', (req,res) => {
             ${req.body.min_playtime},
             ${req.body.max_playtime},
             '${req.body.notes}',
-            ${req.body.userid}
+            ${req.body.user_id}
         );`, (err, response) => {
             if (err) {
                 res.json({error: err})
             }
-            postgres.query(`SELECT * FROM gameentries WHERE userId = ${req.body.userId};`, (err, results) => {
+            postgres.query(`SELECT * FROM game_entries WHERE userId = ${req.body.userId};`, (err, results) => {
                 res.json(results.rows)
             })
         }
@@ -73,7 +73,7 @@ router.post('/newgame', (req,res) => {
 
 router.put('/:gameid', (req,res) => {
     postgres.query(
-        `UPDATE gameentries SET
+        `UPDATE game_entries SET
         name= '${req.body.name}',
         image_url = '${req.body.image_url}',
         min_players = ${req.body.min_players},
@@ -81,7 +81,7 @@ router.put('/:gameid', (req,res) => {
         min_playtime = ${req.body.min_playtime},
         max_playtime = ${req.body.max_playtime},
         notes = '${req.body.notes}';`, (err, response) => {
-            postgres.query(`SELECT * FROM gameentries WHERE id = ${req.params.gameid}`, (err, updatedGame) => {
+            postgres.query(`SELECT * FROM game_entries WHERE id = ${req.params.gameid}`, (err, updatedGame) => {
                 res.json(updatedGame.rows[0])
             })
         }
@@ -89,7 +89,7 @@ router.put('/:gameid', (req,res) => {
 })
 
 router.post('/delete/:gameid', (req,res) => {
-    postgres.query(`DELETE FROM gameentries WHERE id = ${req.params.gameid};`, (err, results) => {
+    postgres.query(`DELETE FROM game_entries WHERE id = ${req.params.gameid};`, (err, results) => {
         if (err) {
             res.json({error: err})
         }
