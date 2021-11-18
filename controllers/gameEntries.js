@@ -53,13 +53,13 @@ router.post('/newgame', (req,res) => {
     postgres.query(
         `INSERT INTO gameentries (name, imageurl, minplayers, maxplayers, mintime, maxtime, notes, userId) values (
             '${req.body.name}',
-            '${req.body.imageUrl}',
-            ${req.body.minPlayers},
-            ${req.body.maxPlayers},
-            ${req.body.minTime},
-            ${req.body.maxTime},
+            '${req.body.image_url}',
+            ${req.body.min_players},
+            ${req.body.max_players},
+            ${req.body.min_playtime},
+            ${req.body.max_playtime},
             '${req.body.notes}',
-            ${req.body.userId}
+            ${req.body.userid}
         );`, (err, response) => {
             if (err) {
                 res.json({error: err})
@@ -75,11 +75,11 @@ router.put('/:gameid', (req,res) => {
     postgres.query(
         `UPDATE gameentries SET
         name= '${req.body.name}',
-        imageurl = '${req.body.imageUrl}',
-        minplayers = ${req.body.minPlayers},
-        maxplayers = ${req.body.maxPlayers},
-        mintime = ${req.body.minTime},
-        maxtime = ${req.body.maxTime},
+        image_url = '${req.body.image_url}',
+        min_players = ${req.body.min_players},
+        max_players = ${req.body.max_players},
+        min_playtime = ${req.body.min_playtime},
+        max_playtime = ${req.body.max_playtime},
         notes = '${req.body.notes}';`, (err, response) => {
             postgres.query(`SELECT * FROM gameentries WHERE id = ${req.params.gameid}`, (err, updatedGame) => {
                 res.json(updatedGame.rows[0])
