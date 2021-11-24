@@ -71,7 +71,7 @@ router.post('/newgame', (req,res) => {
     )
 })
 
-router.put('/:game-id', (req,res) => {
+router.put('/:game_id', (req,res) => {
     postgres.query(
         `UPDATE game_entries SET
         name= '${req.body.name}',
@@ -81,15 +81,15 @@ router.put('/:game-id', (req,res) => {
         min_playtime = ${req.body.min_playtime},
         max_playtime = ${req.body.max_playtime},
         notes = '${req.body.notes}';`, (err, response) => {
-            postgres.query(`SELECT * FROM game_entries WHERE id = ${req.params.game-id}`, (err, updatedGame) => {
+            postgres.query(`SELECT * FROM game_entries WHERE id = ${req.params.game_id}`, (err, updatedGame) => {
                 res.json(updatedGame.rows[0])
             })
         }
     )
 })
 
-router.delete('/:game-id', (req,res) => {
-    postgres.query(`DELETE FROM game_entries WHERE id = ${req.params.game-id};`, (err, results) => {
+router.delete('/:game_id', (req,res) => {
+    postgres.query(`DELETE FROM game_entries WHERE id = ${req.params.game_id};`, (err, results) => {
         if (err) {
             res.json({error: err})
         }
