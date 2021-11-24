@@ -64,7 +64,7 @@ router.post('/newgame', (req,res) => {
             if (err) {
                 res.json({error: err})
             }
-            postgres.query(`SELECT * FROM game_entries WHERE user_id = ${req.body.userId} & name = ;`, (err, results) => {
+            postgres.query(`SELECT * FROM game_entries WHERE user_id = ${req.body.userId};`, (err, results) => {
                 res.json(results.rows)
             })
         }
