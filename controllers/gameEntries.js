@@ -64,7 +64,7 @@ router.post('/newgame', (req,res) => {
             if (err) {
                 res.json({error: err})
             }
-            postgres.query(`SELECT * FROM game_entries WHERE user_id = ${req.body.userId};`, (err, results) => {
+            postgres.query(`SELECT * FROM game_entries WHERE user_id = ${req.body.user_id};`, (err, results) => {
                 res.json(results.rows)
             })
         }
@@ -88,7 +88,7 @@ router.put('/:game-id', (req,res) => {
     )
 })
 
-router.post('/delete/:game-id', (req,res) => {
+router.delete('/:game-id', (req,res) => {
     postgres.query(`DELETE FROM game_entries WHERE id = ${req.params.game-id};`, (err, results) => {
         if (err) {
             res.json({error: err})
