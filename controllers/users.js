@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const postgres = require('../postgres.js')
 const bcrypt = require('bcrypt')
+const createError = require('http-errors')
 
 /*
 User Table
@@ -10,6 +11,16 @@ username: varchar(32) UNIQUE
 password: varchar(108)
 email: varchar(32) UNIQUE
 */
+
+const giveErrorMessage = message => {
+    return {
+        id: -1,
+        username: '',
+        password: '',
+        email: '',
+        message: message
+    }
+}
 
 //get all users
 router.get('/', (req,res) => {
@@ -27,27 +38,34 @@ router.get('/:id', (req,res) => {
 
 //Create new user route
 //Returns the newly created user
-router.post('/newuser', (req,res) => {
-    console.log(req.body)
+router.post('/newuser', (req,res,next) => {
     const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
-    console.log(hashPass.length)
-
-    postgres.query(`INSERT INTO users (username, password, email) VALUES (
-        '${req.body.username}', 
-        '${hashPass}', 
-        '${req.body.email}');`,
-        (err, newUser) => {
-            if (err) {
-                res.json({error: err})
-            }
-            postgres.query(
-                'SELECT * FROM users ORDER BY id DESC LIMIT 1;', 
-                (err, results) => {
-                    res.json(results.rows[0])
+    
+    postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}' OR email = '${req.body.email}';`, (err, foundUsers) => {
+        if (foundUsers.rows.length > 0) {
+            res.status(202).json(giveErrorMessage('Username/email already in use'))
+        } else {
+            postgres.query(`INSERT INTO users (username, password, email) VALUES (
+                '${req.body.username}', 
+                '${hashPass}', 
+                '${req.body.email}');`,
+                (err, response) => {
+                    if (err) {
+                        next(err)
+                    } else {
+                        postgres.query(
+                            'SELECT * FROM users ORDER BY id DESC LIMIT 1;', 
+                            (err, results) => {
+                                res.status(201).json(results.rows[0])
+                            }
+                        )
+                    }   
                 }
             )
         }
-    )
+    })
+
+    
 })
 
 //UPDATE - returns updated user
@@ -85,13 +103,7 @@ router.delete('/delete/:id', (req,res) => {
 router.post('/login', (req,res) => {
     postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}';`, (err, results) => {
         //A properly shaped response to deliver an error message without actually throwing an error
-        const badLoginResponse = {
-            id: -1,
-            username: '',
-            password: '',
-            email: '',
-            message: 'Invalid username/password combination'
-        }
+        const badLoginResponse = giveErrorMessage('Invalid username/password combination')
         if (err) {
             next(err)
         } else if (results.rowCount === 0) {
@@ -107,6 +119,9 @@ router.post('/login', (req,res) => {
     })
 })
 
-
+router.use((error, req, res, next) => {
+    console.log(error.message)
+    if (error) res.json(giveErrorMessage(error.message))
+})
 
 module.exports = router
