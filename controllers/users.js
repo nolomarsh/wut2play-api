@@ -92,7 +92,6 @@ router.put('/friends/toggleRequest', (req,res) => {
         FROM users 
         WHERE id = ${receiverId}`, (err, response) => {
           const newArray = response.rows[0].processed_array
-          console.log([newArray.join('","')])
           postgres.query(
             `UPDATE users
             SET request_ids = '{"${newArray.join('","')}"}'
@@ -109,6 +108,18 @@ router.put('/friends/toggleRequest', (req,res) => {
       )
     }
   })
+})
+
+router.put('/friends/response', (req,res) => {
+  const { responderId, requesterId, action } = req.body
+  postgres.query(
+    `SELECT * FROM users
+    WHERE id = ${responderId}`, (err, response) => {
+      const { request_ids, friend_ids } = response.rows[0]
+      //TODO finish this function, currently just grabs the responder
+      res.json(response.rows[0])
+    }
+  )
 })
 
 //UPDATE - returns updated user
