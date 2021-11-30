@@ -72,7 +72,9 @@ router.put('/friends/toggleRequest', (req,res) => {
   const { senderId, receiverId } = req.body
   postgres.query(`SELECT * FROM users WHERE id = ${receiverId};`, (err, response) => {
     const receiverRequests = response.rows[0].request_ids
+    console.log(receiverRequests)
     if(!receiverRequests.includes(senderId)){
+      console.log('if')
       postgres.query(
         `UPDATE users 
         SET request_ids = array_append(request_ids, ${senderId}) 
@@ -86,23 +88,19 @@ router.put('/friends/toggleRequest', (req,res) => {
         }
       )
     } else {
+      console.log("receiverRequests: ", receiverRequests, "senderId: ", senderId, "indexOf ;", receiverRequests.indexOf(senderId))
+      const updatedRequests = [...receiverRequests]
+      updatedRequests.splice(updatedRequests.indexOf(senderId), 1)
+      console.log("updated requests: ", updatedRequests)
       postgres.query(
-        `SELECT array_remove(request_ids, ${senderId}) 
-        AS processed_array 
-        FROM users 
-        WHERE id = ${receiverId}`, (err, response) => {
-          const newArray = response.rows[0].processed_array
+        `UPDATE users
+        SET request_ids = '{"${updatedRequests.join('","')}"}'
+        WHERE id = ${receiverId};`, (err, response) => {
           postgres.query(
-            `UPDATE users
-            SET request_ids = '{"${newArray.join('","')}"}'
+            `SELECT * FROM users
             WHERE id = ${receiverId};`, (err, response) => {
-              postgres.query(
-                `SELECT * FROM users
-                WHERE id = ${receiverId};`, (err, response) => {
-                  res.json(response.rows[0])
-                }
-              )
-            } 
+              res.json(response.rows[0])
+            }
           )
         }
       )
