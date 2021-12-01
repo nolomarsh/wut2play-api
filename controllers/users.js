@@ -168,7 +168,45 @@ router.put('/friends/response', (req,res) => {
   )
 })
 
-
+router.put('/friends/unfriend', (req,res) => {
+  const { deleterId, deletedId } = req.body
+  //Select person deleting friend
+  postgres.query(
+    `SELECT * FROM users
+    WHERE id = ${deleterId};`, (err, response) => {
+      const deleterFriends = [...response.rows[0].friend_ids]
+      //Delete from first person's friends
+      postgres.query(
+        `UPDATE users
+        SET friend_ids = ${spliceAndProcessArray(deleterFriends, deletedId)}
+        WHERE id = ${deleterId};`, (err, response) => {
+          //Select person being unfriended
+          postgres.query(
+            `SELECT * FROM users
+            WHERE id = ${deletedId};`, (err, response) => {
+              const deletedFriends = [...response.rows[0].friend_ids]
+              //Remove deleter from other person's friends
+              postgres.query(
+                `UPDATE users
+                SET friend_ids = ${spliceAndProcessArray(deletedFriends, deleterId)}
+                WHERE id = ${deletedId};`, (err, response) => {
+                  //Return both users
+                  postgres.query(
+                    `SELECT * FROM users
+                    WHERE id = ${deleterId}
+                    OR id = ${deletedId};`, (err, response) => {
+                      res.json(response.rows)
+                    }
+                  )
+                }
+              )
+            }
+          )
+        }
+      )
+    }
+  )
+})
 
 //UPDATE - returns updated user
 router.put('/:id', (req,res) => {
