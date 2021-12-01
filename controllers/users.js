@@ -26,6 +26,18 @@ const giveErrorMessage = message => {
   }
 }
 
+const spliceAndProcessArray = (array, toRemove) => {
+  const newArray = [...array]
+  newArray.splice(newArray.indexOf(toRemove), 1)
+  let processedArray
+  if (newArray.length === 0) {
+    processedArray = `'{}'`
+  } else {
+    processedArray = `'{"${newArray.join('","')}"}'`
+  }
+  return processedArray
+}
+
 //get all users
 router.get('/', (req,res) => {
   postgres.query('SELECT * FROM users ORDER BY id ASC;', (err, results) => {
@@ -44,7 +56,10 @@ router.get('/:id', (req,res) => {
 //Returns the newly created user
 router.post('/newuser', (req,res,next) => {
   const hashPass = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10))
-  postgres.query(`SELECT * FROM users WHERE username = '${req.body.username}' OR email = '${req.body.email}';`, (err, foundUsers) => {
+  postgres.query(
+    `SELECT * FROM users 
+    WHERE username = '${req.body.username}' 
+    OR email = '${req.body.email}';`, (err, foundUsers) => {
     if (foundUsers.rows.length > 0) {
       res.status(202).json(giveErrorMessage('Username/email already in use'))
     } else {
@@ -56,7 +71,8 @@ router.post('/newuser', (req,res,next) => {
             next(err)
           } else {
             postgres.query(
-              `SELECT * FROM users WHERE username = ${req.body.username};`, (err, results) => {
+              `SELECT * FROM users 
+              WHERE username = ${req.body.username};`, (err, results) => {
                 res.status(201).json(results.rows[0])
               }
             )
@@ -71,31 +87,27 @@ router.post('/newuser', (req,res,next) => {
 router.put('/friends/toggleRequest', (req,res) => {
   const { senderId, receiverId } = req.body
   postgres.query(`SELECT * FROM users WHERE id = ${receiverId};`, (err, response) => {
-    const receiverRequests = response.rows[0].request_ids
-    console.log(receiverRequests)
-    if(!receiverRequests.includes(senderId)){
-      console.log('if')
+    const {request_ids, friend_ids} = response.rows[0]
+    if(!request_ids.includes(senderId) && !friend_ids.includes(senderId)){
       postgres.query(
         `UPDATE users 
         SET request_ids = array_append(request_ids, ${senderId}) 
         WHERE id = ${receiverId};`, (err,response) => {
           postgres.query(
             `SELECT * FROM users
-            WHERE id = ${receiverId}`, (err, response) => {
+            WHERE id = ${receiverId};`, (err, response) => {
               res.json(response.rows[0])
             }
           )
         }
       )
     } else {
-      console.log("receiverRequests: ", receiverRequests, "senderId: ", senderId, "indexOf ;", receiverRequests.indexOf(senderId))
-      const updatedRequests = [...receiverRequests]
-      updatedRequests.splice(updatedRequests.indexOf(senderId), 1)
-      console.log("updated requests: ", updatedRequests)
+      // const updatedRequests = [...receiverRequests]
+      // updatedRequests.splice(updatedRequests.indexOf(senderId), 1)
       postgres.query(
         `UPDATE users
-        SET request_ids = '{"${updatedRequests.join('","')}"}'
-        WHERE id = ${receiverId};`, (err, response) => {
+        SET request_ids = ${spliceAndProcessArray(request_ids, senderId)}
+        WHERE id = ${receiverId};`, (err, response) => { 
           postgres.query(
             `SELECT * FROM users
             WHERE id = ${receiverId};`, (err, response) => {
@@ -110,15 +122,53 @@ router.put('/friends/toggleRequest', (req,res) => {
 
 router.put('/friends/response', (req,res) => {
   const { responderId, requesterId, action } = req.body
+  //Find the person responding to a friend request
   postgres.query(
     `SELECT * FROM users
-    WHERE id = ${responderId}`, (err, response) => {
+    WHERE id = ${responderId};`, (err, response) => {
       const { request_ids, friend_ids } = response.rows[0]
-      //TODO finish this function, currently just grabs the responder
-      res.json(response.rows[0])
+      //Remove the requesterId from requests regardless of action
+      postgres.query(
+        `UPDATE users
+        SET request_ids = ${spliceAndProcessArray(request_ids, requesterId)}
+        WHERE id = ${responderId};`, (err, response) => {
+          //If request is accepted, add them to each other's friend_ids
+          if(action === 'accept' && !friend_ids.includes(requesterId)) {
+            postgres.query(
+              `UPDATE users 
+              SET friend_ids = array_append(friend_ids, ${requesterId})
+              WHERE id = ${responderId};`, (err, response) => {
+                postgres.query(
+                  `UPDATE users
+                  SET friend_ids = array_append(friend_ids, ${responderId})
+                  WHERE id = ${requesterId};`, (err, response) => {
+                    //return the two altered users
+                    postgres.query(
+                      `SELECT * FROM users
+                      WHERE id = ${responderId}
+                      OR id = ${requesterId};`, (err, response) => {
+                        res.json(response.rows) 
+                      }
+                    )
+                  }
+                )
+              }
+            )
+          } else {
+            postgres.query(
+              `SELECT * FROM users
+              WHERE id = ${responderId}`, (err, response) => {
+                res.json(response.rows[0])
+              }
+            )
+          }
+        }
+      )
     }
   )
 })
+
+
 
 //UPDATE - returns updated user
 router.put('/:id', (req,res) => {
