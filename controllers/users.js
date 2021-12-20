@@ -47,8 +47,23 @@ router.get('/', (req,res) => {
 
 //get all data on a user by id
 router.get('/:id', (req,res) => {
-  postgres.query(`SELECT * FROM users WHERE id = ${req.params.id};`, (err, result) => {
-    res.json(result.rows)
+  postgres.query(`SELECT * FROM users WHERE id = ${req.params.id};`, (err, results) => {
+    res.json(results.rows)
+  })
+})
+
+router.post('/getmanybyid', (req,res) => {
+  postgres.query(`SELECT * FROM users WHERE id IN (${req.body.ids.join(',')}) ORDER BY id ASC;`, (err, results) => {
+    const foundUsers = results.rows
+    // console.log(foundUsers)
+    res.json(foundUsers)
+  })
+})
+
+router.post('/getmanybyname', (req,res) => {
+  postgres.query(`SELECT * FROM users WHERE username LIKE '%${req.body.username}%' ORDER BY id ASC;`, (err, results) => {
+    const foundUsers = results.rows
+    res.json(foundUsers)
   })
 })
 
