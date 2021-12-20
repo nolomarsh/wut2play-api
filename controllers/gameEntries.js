@@ -92,8 +92,12 @@ router.delete('/:game_id', (req,res) => {
     postgres.query(`DELETE FROM game_entries WHERE id = ${req.params.game_id};`, (err, results) => {
         if (err) {
             res.json({error: err})
+        } else {
+            postgres.query(`SELECT * FROM game_entries WHERE user_id = ${req.body.user_id}`, (err, remainingGames) => {
+                console.log(remainingGames)
+                res.json(remainingGames.rows)
+            })
         }
-        res.json({status: 'deleted'})
     })
 })
 
