@@ -32,20 +32,25 @@ router.get('/:user_id', (req,res) => {
         })
 })
 
-router.post('/:user_id/filter', (req,res) => {
-    postgres.query(
-        `SELECT * FROM game_entries WHERE
-        user_id = ${req.params.user_id} AND
+router.post('/get_game_pool', (req,res) => {
+    let queryString = `SELECT * FROM game_entries WHERE user_id IN (${req.body.user_ids.join(',')})`
+    if(req.body.num_players > 0){
+        queryString += ` AND
         min_players <= ${req.body.num_players} AND
-        max_players >= ${req.body.num_players} AND
+        max_players >= ${req.body.num_players}`
+    }
+    if (req.body.playtime > 0) {
+        queryString += ` AND
         min_playtime <= ${req.body.playtime} AND
-        max_playtime >= ${req.body.playtime};`, (err, results) => {
-            if (err) {
-                res.json({error: err})
-            }
-            res.json(results.rows)
+        max_playtime >= ${req.body.playtime}`
+    }
+    queryString += ';'
+    postgres.query(queryString, (err, results) => {
+        if (err) {
+            res.json({error: err})
         }
-    )
+        res.json(results.rows)
+    })
 })
 
 //new game route
