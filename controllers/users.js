@@ -87,7 +87,7 @@ router.post('/newuser', (req,res,next) => {
           } else {
             postgres.query(
               `SELECT * FROM users 
-              WHERE username = ${req.body.username};`, (err, results) => {
+              WHERE username = '${req.body.username}';`, (err, results) => {
                 res.status(201).json(results.rows[0])
               }
             )
