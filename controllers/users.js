@@ -82,16 +82,16 @@ router.post('/newuser', (req,res,next) => {
         '${req.body.username}', 
         '${hashPass}', 
         '${req.body.email}');`, (err, response) => {
-          if (err) {
-            next(err)
-          } else {
+          // if (err) {
+          //   next(err)
+          // } else {
             postgres.query(
               `SELECT * FROM users 
               WHERE username = '${req.body.username}';`, (err, results) => {
                 res.status(201).json(results.rows[0])
               }
             )
-          }   
+          // }   
         }
       )
     }
